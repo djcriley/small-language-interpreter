@@ -1,0 +1,40 @@
+Line: 3 * (5 + 10 / 3 - 1)
+-------------------------
+Tokens:
+3  :  Number
+*  :  Punctuation
+(  :  Punctuation
+5  :  Number
++  :  Punctuation
+10  :  Number
+/  :  Punctuation
+3  :  Number
+-  :  Punctuation
+1  :  Number
+)  :  Punctuation
+
+-----------------------
+
+
+-----------------------AST-----------------------
+
+* : Punctuation
+	3 : Number
+	+ : Punctuation
+		5 : Number
+		- : Punctuation
+			/ : Punctuation
+				10 : Number
+				3 : Number
+			1 : Number
+
+--------------------------------------------------
+
+
+-----------------------Evaluator-----------------------
+
+
+Output: 21
+
+-------------------------------------------------------
+
