@@ -1,10 +1,6 @@
 import re
 import sys
 
-# Cooper Riley
-# phase 3.1
-# pycharm
-
 inputfile = sys.argv[1]
 outputfile = sys.argv[2]
 text_file = open(inputfile, "r")
@@ -13,8 +9,6 @@ f = open(outputfile, "a")
 NUMBER_TOKEN = re.compile("^[0-9]+$")
 IDENTIFIER = re.compile("^([a-z]|[A-Z])([a-z]|[A-Z]|[0-9])*$")
 PUNCTUATION = re.compile("^(\+|\-|\*|/|\)|\(|:=|;)$")
-KEYWORD = re.compile("^(if|then|else|endif|while|do|endwhile|skip)$")
-
 
 class Parser:
     def __init__(self, tokens):
@@ -95,91 +89,6 @@ class Parser:
                 self.consume_token()
                 return tree
 
-    def statement(self):
-        tree = self.baseStatement()
-        while self.current_token.value == ';':
-            token = self.current_token
-            self.consume_token()
-            right = self.baseStatement()
-            tree = Node(tree, token.value, right, None)
-            tree.type = 'Punctuation'
-        return tree
-
-    def baseStatement(self):
-        if self.current_token.type == 'Identifier':
-            tree = self.assignment()
-            return tree
-        elif self.current_token.value == 'if':
-            tree = self.ifStatement()
-            return tree
-        elif self.current_token.value == 'while':
-            tree = self.whileStatement()
-            return tree
-        elif self.current_token.value == 'skip':
-            self.consume_token()
-            return Node(None, self.current_token.value, None, None)
-        else:
-            print('raise exception')
-
-    def assignment(self):
-        if self.current_token.type == 'Identifier':
-            token1 = self.current_token
-            temp = Node(None, token1.value, None, None)
-            temp.type = 'Identifier'
-            self.consume_token()
-            if self.current_token.value == ':=':
-                token = self.current_token
-                self.consume_token()
-                tree = self.expression()
-                node = Node(temp, token.value, tree, None)
-                node.type = 'Punctuation'
-                return node
-            else:
-                print('raise exception')
-        else:
-            print('raise exception')
-
-    def ifStatement(self):
-        if self.current_token.value == 'if':
-            temp = self.current_token
-            self.consume_token()
-            tree1 = self.expression()
-            if self.current_token.value == 'then':
-                self.consume_token()
-                tree2 = self.statement()
-                if self.current_token.value == 'else':
-                    self.consume_token()
-                    tree3 = self.statement()
-                    if self.current_token.value == 'endif':
-                        self.consume_token()
-                        return Node(tree1, temp.value, tree2, tree3)
-                    else:
-                        print('raise exception')
-                else:
-                    print('raise exception')
-            else:
-                print('raise exception')
-        else:
-            print('raise exception')
-
-    def whileStatement(self):
-        if self.current_token.value == 'while':
-            self.consume_token()
-            tree1 = self.expression()
-            if self.current_token.value == 'do':
-                self.consume_token()
-                tree2 = self.statement()
-                if self.current_token.value == 'endwhile':
-                    self.consume_token()
-                    return Node(tree1, 'WHILE LOOP', tree2, None)
-                else:
-                    print('raise exception')
-            else:
-                print('raise exception')
-        else:
-            print('raise exception')
-
-
 class Node:
     def __init__(self, left, value, right, middle):
         self.value = value
@@ -187,9 +96,6 @@ class Node:
         self.right = right
         self.middle = middle
         self.type = None
-
-    def print(self):
-        print(self.value, ':')
 
     def preorder_print(self, tree, level=0):
         if tree is None:
@@ -220,20 +126,6 @@ class Token:
         print(self.value, " : ", self.type, file=f)
 
 
-gstack = []
-
-
-# def preorder(node):
-#     global gstack
-#
-#     if not node:
-#         return None
-#     gstack.append(node)
-#     preorder(node.left)
-#     preorder(node.right)
-#     return gstack
-
-
 class Evaluator:
     def __init__(self):
         self.stack = []
@@ -242,13 +134,12 @@ class Evaluator:
     def printEval(self):
         print("\n-----------------------Evaluator-----------------------\n", file=f)
 
-        print("\nOutput:", int(self.stack[0].value), file=f)
+        print("\nOutput:", self.stack[0].value, file=f)
 
         print("\n-------------------------------------------------------\n", file=f)
 
     def eval(self, root):
         self.stack.append(root)
-        print(self.stack[0].value)
         if len(self.stack) >= 3:
             # 1 is for the data type
             while len(self.stack) >= 3 and self.stack[-1].type == "Number" and self.stack[-2].type == "Number" and \
@@ -278,13 +169,17 @@ class Evaluator:
 
                 elif punct.value == '/':
                     # division by 0 throw exception
-                    if int(num1.value) == 0:
-                        print("Divison by 0 error, failing peacefully")
-                        return
-                    result = int(num2.value) / int(num1.value)
-                    x = Node(None, result, None, None)
-                    x.type = "Number"
-                    self.stack.append(x)
+                    # if int(num2.value) == 0:
+                    #     print("Divison by 0 error, failing peacefully")
+                    #     return
+                    try:
+                        result = int(num2.value) / int(num1.value)
+                        x = Node(None, result, None, None)
+                        x.type = "Number"
+                        self.stack.append(x)
+                    except ZeroDivisionError as exception:
+                        print("Division by 0", file=f)
+                        raise exception
 
         if root.left == None:
             return
@@ -311,9 +206,7 @@ def main():
                 id_result = re.match(IDENTIFIER, x)
                 num_result = re.match(NUMBER_TOKEN, x)
                 punc_result = re.match(PUNCTUATION, x)
-                key_result = re.match(KEYWORD, x)
-                if (id_result is None) & (num_result is None) & (punc_result is None) & (key_result is None) & (
-                        len(x) != 1):
+                if (id_result is None) & (num_result is None) & (punc_result is None) & (len(x) != 1):
                     back = token[len(x) - 1:]
                     front = token[0:len(x) - 1]
                     words.insert(words.index(token), front)
@@ -326,14 +219,11 @@ def main():
             num_result = re.match(NUMBER_TOKEN, token)
             id_result = re.match(IDENTIFIER, token)
             punc_result = re.match(PUNCTUATION, token)
-            key_result = re.match(KEYWORD, token)
 
             # for this section I removed printing line by line and print them all at once after scanning in the file
 
-            if key_result is not None:
-                # print(token, ": Keyword", file=f)
-                token_list.append(Token(token, "keyword"))
-            elif id_result is not None:
+            
+            if id_result is not None:
                 # print(token, ": Identifier", file=f)
                 token_list.append(Token(token, "Identifier"))
             elif num_result is not None:
@@ -364,14 +254,6 @@ def main():
                 elif token == ')':
                     tok = Token(token, "Punctuation")
                     tok.op = 'rightP'
-                    token_list.append(tok)
-                elif token == ':=':
-                    tok = Token(token, "Punctuation")
-                    tok.op = 'equal'
-                    token_list.append(tok)
-                elif token == ';':
-                    tok = Token(token, "Punctuation")
-                    tok.op = 'semi'
                     token_list.append(tok)
 
             else:
